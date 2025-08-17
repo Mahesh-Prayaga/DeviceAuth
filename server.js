@@ -1,44 +1,49 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const mongoose = require("./db");
+const Device = require("./models/Device");
 
 const PORT = process.env.PORT || 3000;
-
 const app = express();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Fake in-memory database (for demo only)
-// Format: { userId: androidId }
-let devices = {};
-
-// 📌 Register Device API
-app.post("/registerDevice", (req, res) => {
+app.post("/registerDevice", async (req, res) => {
   const { userId, androidId } = req.body;
-
-  if (!userId || !androidId) {
+  if (!userId || !androidId)
     return res
       .status(400)
       .json({ success: false, msg: "Missing userId or androidId" });
-  }
 
-  devices[userId] = androidId; // save device binding
-  res.json({ success: true, msg: "Device registered" });
+  try {
+    const existing = await Device.findOne({ userId, androidId });
+    if (existing)
+      return res.json({ success: true, msg: "Device already registered" });
+
+    const device = new Device({ userId, androidId });
+    await device.save();
+    res.json({ success: true, msg: "Device registered" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, msg: "DB error" });
+  }
 });
 
-// 📌 Verify Device API
-app.post("/verifyDevice", (req, res) => {
+app.post("/verifyDevice", async (req, res) => {
   const { userId, androidId } = req.body;
-
-  if (!userId || !androidId) {
+  if (!userId || !androidId)
     return res
       .status(400)
       .json({ success: false, msg: "Missing userId or androidId" });
-  }
 
-  if (devices[userId] && devices[userId] === androidId) {
-    res.json({ success: true, msg: "Device verified" });
-  } else {
-    res.json({ success: false, msg: "Device not recognized" });
+  try {
+    const device = await Device.findOne({ userId, androidId });
+    if (device) res.json({ success: true, msg: "Device verified" });
+    else res.json({ success: false, msg: "Device not recognized" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, msg: "DB error" });
   }
 });
 

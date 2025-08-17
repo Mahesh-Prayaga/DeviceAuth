@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 
-const mongoURI = process.env.MONGO_URI || "YOUR_ATLAS_URI_HERE";
+const mongoURI =
+  process.env.MONGO_URI ||
+  "mongodb+srv://maheshprayaga09:mahesh09@deviceauth.crbtwjp.mongodb.net/?retryWrites=true&w=majority&appName=DeviceAuth";
 
 mongoose
   .connect(mongoURI, {
